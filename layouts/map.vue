@@ -2,11 +2,11 @@
   <div>
     <div style="height: 100vh">
       <client-only>
-        <l-map :zoom="15" :center="[25.0462897, 121.5166667]">
+        <l-map :zoom="15" :center="[latitude, longitude]">
           <l-tile-layer
             url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
           ></l-tile-layer>
-          <l-marker :lat-lng="[25.0462897, 121.5166667]"></l-marker>
+          <l-marker :lat-lng="[latitude, longitude]"></l-marker>
         </l-map>
       </client-only>
     </div>
@@ -17,7 +17,26 @@
 </template>
 
 <script>
-export default {}
+export default {
+  data() {
+    return {
+      latitude: "",
+      longitude: "",
+    };
+  },
+  created: function () {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((postion) => {
+        console.log(postion.coords.latitude);
+        console.log(postion.coords.longitude);
+        this.latitude = postion.coords.latitude;
+        this.longitude = postion.coords.longitude;
+      });
+    } else {
+      console.log("Your brower does not suppot gelocation api");
+    }
+  },
+};
 </script>
 
 <style scoped>
