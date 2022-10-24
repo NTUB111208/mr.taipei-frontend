@@ -1,7 +1,7 @@
 <template>
   <div>
     <section ref="map" id="map"></section>
-
+    <Loading v-model="loading"></Loading>
     <div class="wrapper">
       <nuxt v-if="map" />
     </div>
@@ -13,6 +13,7 @@ export default {
   data() {
     return {
       map: null,
+      loading:true,
       position: {
         latitude: 25.0487269,
         longitude: 121.5181263,
@@ -39,6 +40,7 @@ export default {
       mapTypeId: google.maps.MapTypeId.ROADMAP,
     });
     this.$nuxt.$map = this.map;
+    this.loading = false;
 
     new google.maps.Marker({
       position: new google.maps.LatLng(this.position.latitude, this.position.longitude),
