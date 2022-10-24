@@ -24,7 +24,19 @@ export default {
     return liff.getAccessToken()
   },
   async getIDToken() {
-    return liff.getIDToken()
+    return new Promise((r) => {
+      let interval = setInterval(async () => {
+        if (liff.isLoggedIn()) {
+          let token = await liff.getIDToken()
+          if (token) {
+            clearInterval(interval)
+            r(token)
+          }
+        } else {
+          return null
+        }
+      }, 200)
+    })
   },
   async authWithBackend() {
     return window.$nuxt.$axios

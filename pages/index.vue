@@ -18,6 +18,11 @@ export default {
 
     if (this.$store.state.auth.user) {
       this.$router.push('/navigation')
+    } else {
+      if (await liff.checkLogin()) {
+        await liff.authWithBackend()
+        this.$router.push('/navigation')
+      }
     }
   },
   methods: {
