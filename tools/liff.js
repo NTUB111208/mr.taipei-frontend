@@ -1,5 +1,6 @@
 const liff = require('@line/liff')
 const config = require('../config.js').default
+const axios = require('axios')
 
 export default {
   async init() {
@@ -39,7 +40,7 @@ export default {
     })
   },
   async authWithBackend() {
-    return window.$nuxt.$axios
+    return axios
       .post('/api/auth/login', {
         idToken: await this.getIDToken(),
       })
@@ -55,7 +56,7 @@ export default {
       })
   },
   async getBackendAuthStatus() {
-    return window.$nuxt.$axios
+    return axios
       .get('/api/auth/status')
       .then((response) => {
         let user = response.data.user
