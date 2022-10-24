@@ -2,9 +2,10 @@ export default {
   map: {
     key: 'AIzaSyCJFwbpGbSupV8prrQsoX-VeIzMBookR5Q',
   },
-  line: {
-    client_id: '1656586136',
-    client_secret: '3123ea22ad4c1a3af54d4e8525403de8',
+  imgur: {
+    clientID: '27a8586bbc7df9a',
   },
-  api: 'https://ntub.fr.rs',
+  liff: {
+    liffID: '1657585133-V5WpW2ek',
+  },
 }

@@ -9,18 +9,20 @@
 </template>
 
 <script>
-import lineLogin from '~/tools/lineLogin'
+import liff from '~/tools/liff'
 
 export default {
   name: 'IndexPage',
+  async mounted() {
+    await liff.getBackendAuthStatus()
+
+    if (this.$store.state.auth.user) {
+      this.$router.push('/navigation')
+    }
+  },
   methods: {
     async lineLogin() {
-      if (await lineLogin.verifyCurrentAccessToken()) {
-        this.$router.push('/navigation')
-      } else {
-        let url = lineLogin.generateLoginURL()
-        window.open(url, '_self')
-      }
+      liff.login()
     },
   },
 }

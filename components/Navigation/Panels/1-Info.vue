@@ -27,8 +27,20 @@
     <Panel v-else>
       <div class="cols">
         <div class="col-5 rows align-items-center p-3">
-          <img class="avatar" :src="user.avatar" alt="" />
-          <span class="color-text font-size-regular mt-2">{{ user.name }}</span>
+          <img
+            class="avatar"
+            :src="
+              this.$store.state.auth.user &&
+              this.$store.state.auth.user.user_avatar
+                ? this.$store.state.auth.user.user_avatar
+                : '/assets/profile.png'
+            "
+          />
+          <span class="color-text font-size-regular mt-2">{{
+            this.$store.state.auth.user
+              ? this.$store.state.auth.user.user_name
+              : null
+          }}</span>
         </div>
         <div class="col-7">
           <div class="rows">
@@ -70,7 +82,6 @@
 </template>
 
 <script>
-import lineLogin from '~/tools/lineLogin'
 import ubike from '~/tools/ubike'
 export default {
   props: {
@@ -79,30 +90,11 @@ export default {
     },
   },
   async mounted() {
-    
     ubike.getUbikeApi() //取ubike資料
-
-    let loginCounter = 0
-    let interval = setInterval((_) => {
-      let user = lineLogin.getUser()
-      if (user) {
-        this.user.name = user.data.name
-        this.user.avatar = user.data.picture
-        clearInterval(interval)
-      }
-      loginCounter++
-      if (loginCounter > 15) {
-        clearInterval(interval)
-      }
-    }, 200)
   },
   data() {
     return {
       menu: false,
-      user: {
-        name: '',
-        avatar: '',
-      },
     }
   },
 }

@@ -29,7 +29,7 @@ export default {
   },
   computed: {
     elementClass() {
-      return `button font-size-${this.size}`
+      return `button button-size-${this.size} font-size-${this.size}`
     },
   },
 }
@@ -42,5 +42,8 @@ export default {
 
   display: flex;
   justify-content: center;
+}
+.button-size-mini{
+  padding: 0.3rem 0.2rem ;
 }
 </style>
