@@ -13,41 +13,48 @@ export default {
   data() {
     return {
       map: null,
-      loading:true,
+      loading: true,
       position: {
         latitude: 25.0487269,
         longitude: 121.5181263,
       },
-    };
+    }
   },
 
   async mounted() {
     if (navigator.geolocation) {
       await new Promise((resolve) => {
         navigator.geolocation.getCurrentPosition((position) => {
-          this.position.latitude = position.coords.latitude;
-          this.position.longitude = position.coords.longitude;
-          resolve();
-        });
-      });
+          this.position.latitude = position.coords.latitude
+          this.position.longitude = position.coords.longitude
+          resolve()
+        })
+        setTimeout(resolve, 10000)
+      })
     } else {
-      console.warn("Brower does not suppot gelocation API.");
+      console.warn('Brower does not suppot gelocation API.')
     }
 
     this.map = new google.maps.Map(this.$refs.map, {
       zoom: 15,
-      center: new google.maps.LatLng(this.position.latitude, this.position.longitude),
+      center: new google.maps.LatLng(
+        this.position.latitude,
+        this.position.longitude
+      ),
       mapTypeId: google.maps.MapTypeId.ROADMAP,
-    });
-    this.$nuxt.$map = this.map;
-    this.loading = false;
+    })
+    this.$nuxt.$map = this.map
+    this.loading = false
 
     new google.maps.Marker({
-      position: new google.maps.LatLng(this.position.latitude, this.position.longitude),
+      position: new google.maps.LatLng(
+        this.position.latitude,
+        this.position.longitude
+      ),
       map: this.map,
-    });
+    })
   },
-};
+}
 </script>
 
 <style scoped>
