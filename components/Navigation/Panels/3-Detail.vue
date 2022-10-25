@@ -58,7 +58,12 @@
       <div class="col-3 p-1">
         <Button color="#f3f5f8" textColor="#00e88e"> &nbsp; </Button>
       </div>
-      <div class="col-4 p-1">
+      <div class="col-2 p-1">
+        <Button @click="favorite" color="#e68181" textColor="#ffffff" size="small">
+          <Icon icon="heart"></Icon>
+        </Button>
+      </div>
+      <div class="col-2 p-1">
         <Button
           @click="$emit('next', 'setNotice')"
           color="#e9a668"
@@ -77,11 +82,31 @@
 </template>
 
 <script>
+import favRoute from '~/tools/favRoute'
+let isSaved = false
 export default {
   props: {
     data: {
       type: Object,
     },
+  },
+  methods: {
+    async favorite() {
+      if(isSaved){
+        // this.color = '#ffffff'
+        // this.textColor = '#e68181'
+        await favRoute.writeFavRouteToDB(this.data.fromLocation, this.data.toLocation)
+        isSaved = false
+        console.log(isSaved)
+      }
+      else {
+
+        // this.color = '#e68181'
+        // this.textColor = '#ffffff'
+        isSaved = true
+        console.log(isSaved)
+      }
+    }
   },
   mounted() {
     let routeTime = JSON.parse(localStorage.getItem('Navigation:RouteTime'))
