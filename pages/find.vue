@@ -1,12 +1,36 @@
 <template>
   <div class="wrapper">
+    <Loading v-model="loading"></Loading>
     <div class="header p-4 w-100">
       <div class="cols justify-content-space-between w-100 mb-4">
         <div class="cols">
-          <img class="avatar" src="/assets/profile.png" alt="" />
+          <img
+            class="avatar"
+            :src="
+              $store.state.auth.user && $store.state.auth.user.user_avatar
+                ? $store.state.auth.user.user_avatar
+                : '/assets/profile.png'
+            "
+            alt=""
+          />
           <div class="flex justify-content-center rows pl-3">
-            <div class="color-text font-size-regular mb-1">Hello, 小宋</div>
+            <div class="color-text font-size-regular mb-1">
+              Hello,
+              {{
+                $store.state.auth.user
+                  ? $store.state.auth.user.user_name
+                  : 'guest'
+              }}
+            </div>
             <div class="color-text">一般訪客</div>
+            <Button
+              v-if="
+                $store.state.auth.user && $store.state.auth.user.user_is_admin
+              "
+              style="margin-top: 8px"
+              size="mini"
+              >切換至管理者介面</Button
+            >
           </div>
         </div>
         <div class="flex cols align-items-center justify-content-center">
@@ -16,11 +40,20 @@
         </div>
       </div>
       <Notice
+        v-if="lastReportedItemByMe"
         class="mb-4"
         title="你最近一次通報的遺失物"
         icon="android-studio"
-        message="項鍊銀色"
-        tips="東門站 | 一分鐘前"
+        :message="
+          lastReportedItemByMe.lost_item_name +
+          ' | ' +
+          lastReportedItemByMe.lost_item_color
+        "
+        :tips="
+          lastReportedItemByMe.lost_item_location +
+          ' | ' +
+          new Date(lastReportedItemByMe.created_at).toLocaleString()
+        "
       >
       </Notice>
     </div>
@@ -29,45 +62,71 @@
       <div class="rows" v-if="mode == 'list'">
         <div class="cols">
           <div class="col-6">
-            <Button class="itemsButton" size="small"
+            <Button
+              class="itemsButton"
+              size="small"
+              @click="(_) => (asc = !asc)"
               ><Icon class="font-size-huge mr-2" icon="calendar"></Icon> 排序
             </Button>
           </div>
           <div class="col-6">
-            <Button class="itemsButton" size="small"
+            <Button
+              class="itemsButton"
+              size="small"
+              @click="(_) => (showSearch = !showSearch)"
               ><Icon class="font-size-huge mr-2" icon="magnify"></Icon> 搜尋
             </Button>
           </div>
         </div>
+        <Input title="搜尋" v-model="search" v-if="showSearch"></Input>
         <div
           class="flex cols justify-content-space-between align-items-center mt-3"
         >
           <span class="font-size-regular">所有通報遺失物</span>
-          <span class="font-size-mini color-secondary">查看更多</span>
+          <span v-if="false" class="font-size-mini color-secondary"
+            >查看更多</span
+          >
         </div>
 
         <div
           class="item flex justify-content-space-between align-items-center mt-3"
-          v-for="item in new Array(10)"
-          :key="item"
+          v-for="item in items
+            .filter((item) =>
+              search
+                ? (
+                    item.lost_item_name +
+                    item.lost_item_color +
+                    item.lost_item_location
+                  ).includes(search)
+                : true
+            )
+            .sort((a, b) => (asc ? (a > b ? -1 : 1) : a > b ? 1 : -1))"
+          :key="item.lost_item_id"
+          @click="view(item)"
         >
           <div class="cols align-items-center">
             <div class="itemIcon mr-3">
               <Icon icon="android-studio"></Icon>
             </div>
             <div>
-              <div class="itemTitle">項鍊銀色</div>
-              <div class="itemSubTitle">Math | 20 站點</div>
+              <div class="itemTitle">
+                {{ item.lost_item_name }} | {{ item.lost_item_color }}
+              </div>
+              <div class="itemSubTitle">
+                {{ item.lost_item_location }} |
+                {{ new Date(item.created_at).toLocaleString() }}
+              </div>
             </div>
           </div>
           <div>
             <Icon class="arrowIcon" icon="chevron-right"></Icon>
           </div>
         </div>
+        <div style="padding-top: 5rem"></div>
       </div>
       <div class="" v-if="mode == 'report'">
         <div class="reportUpload" @click="$refs.fileInput.click()">
-          <img v-if="report.itemImage" :src="report.itemImage" />
+          <img v-if="report.lost_item_image" :src="report.lost_item_image" />
           <span v-else>上傳遺失物圖片</span>
         </div>
         <input
@@ -82,7 +141,7 @@
           backgroundColor="#fff"
           color="#000"
           class="mb-3 reportInput"
-          v-model="report.itemName"
+          v-model="report.lost_item_name"
         ></Input>
         <Input
           title="物品站點"
@@ -90,7 +149,7 @@
           backgroundColor="#fff"
           color="#000"
           class="mb-3 reportInput"
-          v-model="report.itemLocation"
+          v-model="report.lost_item_location"
         ></Input>
         <Input
           title="物品顏色"
@@ -98,10 +157,10 @@
           backgroundColor="#fff"
           color="#000"
           class="mb-3 reportInput"
-          v-model="report.itemColor"
+          v-model="report.lost_item_color"
         ></Input>
         <Input
-          title="通報時間"
+          title="通報時間 (依伺服器時間為準)"
           titleColor="#000"
           backgroundColor="#fff"
           color="#000"
@@ -110,8 +169,48 @@
           v-model="report.reportTime"
         ></Input>
 
-        <Button textColor="#fff" color="#eca468" @click="mode = 'list'">
+        <Button textColor="#fff" color="#eca468" @click="submit">
           確認通報</Button
+        >
+        <Button
+          textColor="#fff"
+          color="#eca468"
+          style="margin-top: 8px"
+          @click="(_) => (mode = 'list')"
+        >
+          返回</Button
+        >
+      </div>
+      <div v-if="mode == 'view'">
+        <img class="viewItemImage" :src="viewItem.lost_item_image" />
+        <div class="viewItemContent">
+          <div class="viewItemContentTitle">物品名稱</div>
+          <div class="viewItemContentText">{{ viewItem.lost_item_name }}</div>
+        </div>
+        <div class="viewItemContent">
+          <div class="viewItemContentTitle">物品顏色</div>
+          <div class="viewItemContentText">{{ viewItem.lost_item_color }}</div>
+        </div>
+        <div class="viewItemContent">
+          <div class="viewItemContentTitle">物品站點</div>
+          <div class="viewItemContentText">
+            {{ viewItem.lost_item_location }}
+          </div>
+        </div>
+        <div class="viewItemContent">
+          <div class="viewItemContentTitle">通報時間</div>
+          <div class="viewItemContentText">
+            {{ new Date(viewItem.created_at).toLocaleString() }}
+          </div>
+        </div>
+
+        <Button
+          textColor="#fff"
+          color="#eca468"
+          style="margin-top: 8px"
+          @click="(_) => (mode = 'list')"
+        >
+          返回</Button
         >
       </div>
     </div>
@@ -120,7 +219,7 @@
       class="reportButton"
       textColor="#fff"
       color="#eca468"
-      v-if="mode != 'report'"
+      v-if="mode == 'list' && this.$store.state.auth.user"
       @click="mode = 'report'"
     >
       <Icon class="reportIcon" icon="bullhorn"></Icon>
@@ -130,19 +229,29 @@
 </template>
 
 <script>
+import config from '../config'
+
 import Icon from '~/components/Elements/Icon.vue'
+import Loading from '~/components/Elements/Loading.vue'
 export default {
   components: { Icon },
   data() {
     return {
       mode: 'list',
+      items: [],
+      loading: false,
+      asc: false,
+      showSearch: false,
+      search: '',
+
+      viewItem: null,
+      lastReportedItemByMe: null,
       report: {
-        itemPhoto: '',
-        itemName: '',
+        lost_item_name: '',
+        lost_item_image: null,
+        lost_item_location: '',
+        lost_item_color: '',
         itemImageFile: null,
-        itemImage: null,
-        itemLocation: '',
-        itemColor: '',
         reportTime: new Date(
           new Date().getTime() + new Date().getTimezoneOffset() * -1 * 60 * 1000
         )
@@ -151,44 +260,94 @@ export default {
       },
     }
   },
+  mounted() {
+    this.getItems()
+  },
   methods: {
+    async getItems() {
+      this.loading = true
+      await this.$axios
+        .get(`/api/lostItems`)
+        .then((response) => {
+          this.items = response.data.items
+          if (this.$store.state.auth.user) {
+            this.$set(
+              this,
+              'lastReportedItemByMe',
+              this.items.find(
+                (item) => item.created_by == this.$store.state.auth.user.user_id
+              )
+            )
+          }
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+      this.loading = false
+    },
     async fileSelected(event) {
       if (event.target.files[0] == undefined) return
+      this.loading = true
       this.report.itemImageFile = event.target.files[0]
-      this.report.itemImage = await this.uploadImage(this.report.itemImageFile)
-      let itemInfo = await this.getItemInfo(this.report.itemImage)
-      this.report.itemColor = itemInfo.item_color
-      this.report.itemName = itemInfo.item_name
+      this.report.lost_item_image = await this.uploadImage(
+        this.report.itemImageFile
+      )
+      let itemInfo = await this.getItemInfo(this.report.lost_item_image)
+      this.report.lost_item_color = itemInfo.item_color
+      this.report.lost_item_name = itemInfo.item_name
+      this.loading = false
     },
     async uploadImage(file) {
-      var authHeaders = new Headers()
-      authHeaders.append('Authorization', 'Client-ID 27a8586bbc7df9a')
-
       var formData = new FormData()
       formData.append('image', file)
 
-      return fetch('https://api.imgur.com/3/image', {
-        method: 'POST',
-        headers: authHeaders,
-        body: formData,
-        redirect: 'follow',
-      })
-        .then((response) => response.json())
-        .then((result) => {
-          return result.data.link
+      return this.$axios
+        .post('https://api.imgur.com/3/image', formData, {
+          headers: {
+            Authorization: 'Client-ID ' + config.imgur.clientID,
+          },
         })
-        .catch((error) => console.log('error', error))
-    },
-    async getItemInfo(url) {
-      return fetch('https://ntub.fr.rs/objectDetection?img_url=' + url)
-        .then((response) => response.json())
-        .then((result) => {
-          return result
+        .then((response) => {
+          return response.data.data.link
         })
         .catch((error) => {
-          console.log('error', error)
-          return {}
+          alert('上傳失敗，請稍後再試')
+          console.log(error)
+          return null
         })
+    },
+    async getItemInfo(url) {
+      return this.$axios
+        .get('/objectDetection?img_url=' + url)
+        .then((response) => {
+          return response.data
+        })
+        .catch((error) => {
+          return {
+            item_name: '',
+            item_color: '',
+          }
+        })
+    },
+    async submit() {
+      this.loading = true
+      await this.$axios
+        .post(`/api/lostItem`, this.report)
+        .then((response) => {
+          this.$snackbar({ message: '通報成功' })
+          this.mode = 'list'
+          this.getItems()
+        })
+        .catch((err) => {
+          this.$snackbar({
+            message: '通報失敗 錯誤:' + err.response.data.message,
+          })
+        })
+      this.loading = false
+    },
+    view(item) {
+      this.mode = 'view'
+      this.viewItem = item
     },
   },
   layout: 'default-noPadding',
@@ -256,6 +415,7 @@ export default {
   font-weight: bold;
 }
 .itemSubTitle {
+  margin-top: 0.2rem;
   font-size: 0.8rem;
 }
 .arrowIcon {
@@ -297,5 +457,27 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.viewItemImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+.viewItemContent {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+.viewItemContentTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+.viewItemContentText {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
 }
 </style>

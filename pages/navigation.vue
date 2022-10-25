@@ -1,12 +1,11 @@
 <template>
   <div class="wrapper">
-    
-      <Icon
-        v-if="panelHistory.length > 1"
-        @click.native="prev"
-        icon="arrow-left"
-        class="prev"
-      ></Icon>
+    <Icon
+      v-if="panelHistory.length > 1"
+      @click.native="prev"
+      icon="arrow-left"
+      class="prev"
+    ></Icon>
     <component
       :is="currentPanel"
       :data="data"
@@ -23,7 +22,6 @@ import DetailPanel from '~/components/Navigation/Panels/3-Detail.vue'
 import StationMapPanel from '~/components/Navigation/Panels/4-StationMap.vue'
 import FavoriteRotuesPanel from '~/components/Navigation/Panels/Z-FavoriteRotues.vue'
 
-import lineLogin from '~/tools/lineLogin'
 export default {
   name: 'NavigatoinPage',
   layout: 'map',
@@ -47,10 +45,6 @@ export default {
 
   mounted() {
     let queryParams = this.$route.query
-    let lineLoginCode = queryParams.code
-    if (lineLoginCode) {
-      lineLogin.issueAccessToken(lineLoginCode)
-    }
     this.map = this.$nuxt.$map
   },
 
@@ -83,7 +77,7 @@ export default {
       if (this.panelHistory.length > 1) {
         this.panelHistory.pop()
         this.currentPanel = this.panelHistory[this.panelHistory.length - 1]
-        if(this.currentPanel == InfoPanel){
+        if (this.currentPanel == InfoPanel) {
           this.panelHistory = []
         }
       }
@@ -110,5 +104,4 @@ export default {
   justify-content: center;
   align-items: center;
 }
-
 </style>
