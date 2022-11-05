@@ -331,7 +331,7 @@ export default {
       await this.$axios
         .get(`/api/lostItems`)
         .then((response) => {
-          this.$set(this,'items',response.data.items)
+          this.$set(this, 'items', response.data.items)
           if (this.$store.state.auth.user) {
             this.$set(
               this,
@@ -396,7 +396,7 @@ export default {
       let url =
         this.mode == 'report'
           ? '/api/lostItem'
-          : '/api/lostItem/' +this.report.lost_item_id
+          : '/api/lostItem/' + this.report.lost_item_id
       let method = this.mode == 'report' ? 'post' : 'put'
       await this.$axios[method](url, this.report)
         .then((response) => {
@@ -426,7 +426,7 @@ export default {
     doReport() {
       this.report.lost_item_name = ''
       this.report.lost_item_image = ''
-      this.report.lost_item_location = ''
+      this.report.lost_item_location = '公館站'
       this.report.lost_item_color = ''
       this.report.reportTime = new Date(
         new Date().getTime() + new Date().getTimezoneOffset() * -1 * 60 * 1000
