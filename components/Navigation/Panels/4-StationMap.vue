@@ -97,4 +97,9 @@ export default {
 .station > * {
   margin-top: 0.2rem;
 }
+
+img {
+  width: 100%;
+  height: auto;
+}
 </style>
