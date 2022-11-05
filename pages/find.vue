@@ -209,7 +209,7 @@
           class="mb-3 reportInput mt-3"
           type="datetime-local"
           v-model="report.lost_item_status"
-          v-if="(mode = 'edit')"
+          v-if="mode == 'edit'"
         >
           <option>已通報</option>
           <option>已領回</option>
@@ -296,7 +296,7 @@ import config from '../config'
 import Icon from '~/components/Elements/Icon.vue'
 import Loading from '~/components/Elements/Loading.vue'
 export default {
-  components: { Icon },
+  components: { Icon, Loading },
   data() {
     return {
       mode: 'list',
