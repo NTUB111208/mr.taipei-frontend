@@ -22,14 +22,36 @@
                   : 'guest'
               }}
             </div>
-            <div class="color-text">一般訪客</div>
+            <div class="color-text">
+              {{
+                $store.state.auth.user
+                  ? $store.state.auth.user.user_is_admin
+                    ? '管理員'
+                    : '一般訪客'
+                  : '一般訪客'
+              }}
+            </div>
             <Button
               v-if="
-                $store.state.auth.user && $store.state.auth.user.user_is_admin
+                $store.state.auth.user &&
+                $store.state.auth.user.user_is_admin &&
+                mode == 'list'
               "
+              @click="mode = 'adminList'"
               style="margin-top: 8px"
               size="mini"
               >切換至管理者介面</Button
+            >
+            <Button
+              v-if="
+                $store.state.auth.user &&
+                $store.state.auth.user.user_is_admin &&
+                mode == 'adminList'
+              "
+              @click="mode = 'list'"
+              style="margin-top: 8px"
+              size="mini"
+              >切換至一般使用者介面</Button
             >
           </div>
         </div>
@@ -52,14 +74,16 @@
         :tips="
           lastReportedItemByMe.lost_item_location +
           ' | ' +
-          new Date(lastReportedItemByMe.created_at).toLocaleString()
+          new Date(lastReportedItemByMe.created_at).toLocaleString() +
+          ' | ' +
+          lastReportedItemByMe.lost_item_status
         "
       >
       </Notice>
     </div>
 
     <div class="items p-4">
-      <div class="rows" v-if="mode == 'list'">
+      <div class="rows" v-if="mode == 'list' || mode == 'adminList'">
         <div class="cols">
           <div class="col-6">
             <Button
@@ -114,7 +138,8 @@
               </div>
               <div class="itemSubTitle">
                 {{ item.lost_item_location }} |
-                {{ new Date(item.created_at).toLocaleString() }}
+                {{ new Date(item.created_at).toLocaleString() }} |
+                {{ item.lost_item_status }}
               </div>
             </div>
           </div>
@@ -124,7 +149,7 @@
         </div>
         <div style="padding-top: 5rem"></div>
       </div>
-      <div class="" v-if="mode == 'report'">
+      <div class="" v-if="mode == 'report' || mode == 'edit'">
         <div class="reportUpload" @click="$refs.fileInput.click()">
           <img v-if="report.lost_item_image" :src="report.lost_item_image" />
           <span v-else>上傳遺失物圖片</span>
@@ -167,10 +192,31 @@
           class="mb-3 reportInput"
           type="datetime-local"
           v-model="report.reportTime"
+          v-if="mode == 'report'"
         ></Input>
+        <div class="viewItemContent" v-else>
+          <div class="viewItemContentTitle">通報時間</div>
+          <div class="viewItemContentText">
+            {{ new Date(viewItem.created_at).toLocaleString() }}
+          </div>
+        </div>
+
+        <Select
+          title="通報狀態"
+          titleColor="#000"
+          backgroundColor="#fff"
+          color="#000"
+          class="mb-3 reportInput mt-3"
+          type="datetime-local"
+          v-model="report.lost_item_status"
+        >
+          <option>已通報</option>
+          <option>已領回</option>
+          <option>已丟棄</option>
+        </Select>
 
         <Button textColor="#fff" color="#eca468" @click="submit">
-          確認通報</Button
+          {{ mode == 'report' ? '確認通報' : '編輯物品' }}</Button
         >
         <Button
           textColor="#fff"
@@ -203,6 +249,12 @@
             {{ new Date(viewItem.created_at).toLocaleString() }}
           </div>
         </div>
+        <div class="viewItemContent">
+          <div class="viewItemContentTitle">物品狀態</div>
+          <div class="viewItemContentText">
+            {{ viewItem.lost_item_status }}
+          </div>
+        </div>
 
         <Button
           textColor="#fff"
@@ -212,6 +264,15 @@
         >
           返回</Button
         >
+        <Button
+          textColor="#fff"
+          color="#eca468"
+          style="margin-top: 8px"
+          @click="editItem(viewItem)"
+          v-if="$store.state.auth.user && $store.state.auth.user.user_is_admin"
+        >
+          編輯</Button
+        >
       </div>
     </div>
 
@@ -220,7 +281,7 @@
       textColor="#fff"
       color="#eca468"
       v-if="mode == 'list' && this.$store.state.auth.user"
-      @click="mode = 'report'"
+      @click="doReport"
     >
       <Icon class="reportIcon" icon="bullhorn"></Icon>
       我要通報</Button
@@ -246,6 +307,7 @@ export default {
 
       viewItem: null,
       lastReportedItemByMe: null,
+      lastMode: 'list',
       report: {
         lost_item_name: '',
         lost_item_image: null,
@@ -269,7 +331,7 @@ export default {
       await this.$axios
         .get(`/api/lostItems`)
         .then((response) => {
-          this.items = response.data.items
+          this.$set(this,'items',response.data.items)
           if (this.$store.state.auth.user) {
             this.$set(
               this,
@@ -331,23 +393,57 @@ export default {
     },
     async submit() {
       this.loading = true
-      await this.$axios
-        .post(`/api/lostItem`, this.report)
+      let url =
+        this.mode == 'report'
+          ? '/api/lostItem'
+          : '/api/lostItem/' +this.report.lost_item_id
+      let method = this.mode == 'report' ? 'post' : 'put'
+      await this.$axios[method](url, this.report)
         .then((response) => {
-          this.$snackbar({ message: '通報成功' })
-          this.mode = 'list'
+          this.$snackbar({
+            message: this.mode == 'report' ? '通報成功' : '編輯成功',
+          })
+          this.mode = this.lastMode
           this.getItems()
         })
         .catch((err) => {
           this.$snackbar({
-            message: '通報失敗 錯誤:' + err.response.data.message,
+            message: '送出失敗 錯誤:' + err.response.data.message,
           })
         })
       this.loading = false
     },
     view(item) {
+      if (this.mode == 'adminList') {
+        this.lastMode = 'adminList'
+        this.editItem(item)
+        return
+      }
       this.mode = 'view'
-      this.viewItem = item
+      this.lastMode = 'list'
+      this.$set(this, 'viewItem', item)
+    },
+    doReport() {
+      this.report.lost_item_name = ''
+      this.report.lost_item_image = ''
+      this.report.lost_item_location = ''
+      this.report.lost_item_color = ''
+      this.report.reportTime = new Date(
+        new Date().getTime() + new Date().getTimezoneOffset() * -1 * 60 * 1000
+      )
+        .toISOString()
+        .slice(0, 16)
+      this.mode = 'report'
+    },
+    editItem(item) {
+      this.report.lost_item_id = item.lost_item_id
+      this.report.lost_item_name = item.lost_item_name
+      this.report.lost_item_image = item.lost_item_image
+      this.report.lost_item_location = item.lost_item_location
+      this.report.lost_item_color = item.lost_item_color
+      this.report.lost_item_status = item.lost_item_status
+      this.report.reportTime = item.reportTime
+      this.mode = 'edit'
     },
   },
   layout: 'default-noPadding',
@@ -473,11 +569,12 @@ export default {
   align-items: flex-start;
 }
 .viewItemContentTitle {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
+  margin: 8px 0px;
 }
 .viewItemContentText {
   margin-top: 0.2rem;
-  font-size: 0.8rem;
+  font-size: 1.6rem;
 }
 </style>
