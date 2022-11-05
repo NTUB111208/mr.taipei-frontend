@@ -209,6 +209,7 @@
           class="mb-3 reportInput mt-3"
           type="datetime-local"
           v-model="report.lost_item_status"
+          v-if="(mode = 'edit')"
         >
           <option>已通報</option>
           <option>已領回</option>
