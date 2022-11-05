@@ -55,20 +55,17 @@ export default {
       {
         type: '起點',
         station: '東門站',
-        image:
-          'http://140.131.114.159:3000/python/pathdraw?startPoint=Exit2&endPoint=Exit2&startStation=Dongmen&transferStation=Daan&destiStation=Dazhi&startTrainHeadto=%E8%B1%A1%E5%B1%B1&destiTrainHeadto=%E5%8D%97%E6%B8%AF%E5%B1%95%E8%A6%BD%E9%A4%A8&imgNum=0',
+        image: 'https://i.imgur.com/QYw2NI3.png',
       },
       {
         type: '轉乘站',
         station: '大安站',
-        image:
-          'http://140.131.114.159:3000/python/pathdraw?startPoint=Exit2&endPoint=Exit2&startStation=Dongmen&transferStation=Daan&destiStation=Dazhi&startTrainHeadto=%E8%B1%A1%E5%B1%B1&destiTrainHeadto=%E5%8D%97%E6%B8%AF%E5%B1%95%E8%A6%BD%E9%A4%A8&imgNum=1',
+        image: 'https://i.imgur.com/YHMawtG.png',
       },
       {
         type: '終點站',
         station: '大直站',
-        image:
-          'http://140.131.114.159:3000/python/pathdraw?startPoint=Exit2&endPoint=Exit2&startStation=Dongmen&transferStation=Daan&destiStation=Dazhi&startTrainHeadto=%E8%B1%A1%E5%B1%B1&destiTrainHeadto=%E5%8D%97%E6%B8%AF%E5%B1%95%E8%A6%BD%E9%A4%A8&imgNum=2',
+        image: 'https://i.imgur.com/fY200rR.png',
       },
     ])
   },
